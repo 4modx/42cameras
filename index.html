@@ -24,7 +24,7 @@
     --shadow: 0 2px 6px rgba(0,0,0,.08), 0 10px 28px rgba(0,0,0,.12);
     --radius: 10px;
     --panel-w: 340px;
-    --sheet-peek: 148px;
+    --sheet-peek: 92px;
     --ease: cubic-bezier(.2,.8,.2,1);
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
@@ -59,21 +59,6 @@
   .panel__head h1 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; }
   .panel__head p { margin: 4px 0 0; color: var(--fg-3); font-size: 12.5px; }
 
-  .search { padding: 0 20px 14px; position: relative; }
-  .search input {
-    width: 100%; height: 44px; padding: 0 40px 0 40px;
-    border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface);
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .search input::placeholder { color: var(--fg-3); }
-  .search input:focus { border-color: var(--accent); box-shadow: var(--focus); }
-  .search svg { position: absolute; left: 33px; top: 14px; width: 16px; height: 16px; color: var(--fg-3); pointer-events: none; }
-  .search .clear {
-    position: absolute; right: 26px; top: 8px; width: 28px; height: 28px;
-    border: 0; border-radius: 50%; background: transparent; color: var(--fg-3); display: none; place-items: center;
-  }
-  .search .clear:hover { background: var(--surface-2); color: var(--fg); }
-  .search.has-value .clear { display: grid; }
 
   .panel__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 12px; }
 
@@ -100,7 +85,7 @@
   .switch .label { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .switch .label .text { flex: 1 1 140px; }
   .switch .cnt { color: var(--fg-3); font-size: 12.5px; white-space: nowrap; }
-  .glyph { width: 14px; height: 14px; flex: 0 0 14px; }
+  .glyph { width: 20px; flex: 0 0 20px; font-size: 16px; line-height: 1; text-align: center; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip {
@@ -110,10 +95,12 @@
   }
   .chip:hover { border-color: var(--fg-3); }
   .chip:active { transform: scale(.97); }
-  .chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+  .chip .emo { font-size: 15px; line-height: 1; width: 18px; text-align: center; }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
   .chip .n { color: var(--fg-3); font-size: 12px; }
   .chip[aria-pressed="false"] { background: transparent; color: var(--fg-3); border-color: var(--line); }
-  .chip[aria-pressed="false"] .dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); opacity: .6; }
+  .chip[aria-pressed="false"] .emo { filter: grayscale(1); opacity: .55; }
+  .chip[aria-pressed="false"] .dot { opacity: .35; }
 
   .panel__foot {
     padding: 12px 20px; border-top: 1px solid var(--line); background: var(--panel);
@@ -167,11 +154,16 @@
   .cam { transition: r .15s; }
   .leaflet-interactive:hover { filter: brightness(1.08); }
 
-  .marker-cluster { background: rgba(21,24,29,.18); }
-  .marker-cluster div {
-    background: #15181d; color: #fff; font: 600 12px/30px var(--font); width: 30px; height: 30px; margin: 5px; border-radius: 50%;
+  .marker-cluster {
+    background: rgba(21,24,29,.16); border-radius: 50%; display: grid; place-items: center;
+    transition: transform .15s var(--ease);
   }
-  .marker-cluster span { line-height: 30px; }
+  .marker-cluster:hover { transform: scale(1.06); }
+  .marker-cluster div {
+    width: 30px; height: 30px; border-radius: 50%; background: #15181d; color: #fff;
+    display: grid; place-items: center; font: 600 12px/1 var(--font); letter-spacing: -.01em;
+  }
+  .marker-cluster.big div { width: 36px; height: 36px; font-size: 13px; }
 
   .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: var(--shadow); padding: 0; }
   .leaflet-popup-content { margin: 14px 16px; font-size: 13px; line-height: 1.4; max-width: 300px; }
@@ -219,9 +211,6 @@
     .panel__head { padding: 0 18px 10px; }
     .panel__head h1 { font-size: 16px; }
     .panel__head p { margin: 2px 0 0; }
-    .search { padding: 0 18px 12px; }
-    .search svg { left: 31px; }
-    .search .clear { right: 24px; }
     .panel__scroll { padding: 0 18px 12px; touch-action: pan-y; }
     .panel__foot { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); }
     .leaflet-bottom { bottom: calc(var(--sheet-peek) + env(safe-area-inset-bottom)); }
@@ -242,14 +231,6 @@
       <h1>Камеры фотовидеофиксации</h1>
       <p>Кузбасс · реестр от <span id="src"></span></p>
     </div>
-    <div class="search" id="searchWrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <label class="visually-hidden" for="q">Поиск по адресу</label>
-      <input id="q" type="search" placeholder="Улица, город, трасса, км…" autocomplete="off" enterkeyhint="search">
-      <button class="clear" id="clear" aria-label="Очистить поиск">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
 
     <div class="panel__scroll">
       <section class="group" aria-labelledby="g-layers">
@@ -257,21 +238,21 @@
         <label class="switch">
           <input type="checkbox" id="showStatic" checked><span class="track"></span>
           <span class="label">
-            <svg class="glyph" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="#e53935" stroke="#fff" stroke-width="1.5"/></svg>
+            <span class="glyph" aria-hidden="true">📷</span>
             <span class="text">Стационарные и передвижные</span> <span class="cnt" id="cntStatic"></span>
           </span>
         </label>
         <label class="switch">
           <input type="checkbox" id="showMobile" checked><span class="track"></span>
           <span class="label">
-            <svg class="glyph" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 11 C4 9, 5 4, 8 5 S11 9, 13 3" fill="none" stroke="#1565c0" stroke-width="2.2" stroke-dasharray="3 2" stroke-linecap="round"/></svg>
+            <span class="glyph" aria-hidden="true">🚓</span>
             <span class="text">Маршруты мобильных комплексов</span> <span class="cnt" id="cntMobile"></span>
           </span>
         </label>
         <label class="switch">
           <input type="checkbox" id="cluster" checked><span class="track"></span>
           <span class="label">
-            <svg class="glyph" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="#15181d"/><circle cx="7" cy="7" r="2.3" fill="#fff"/></svg>
+            <span class="glyph" aria-hidden="true">🫧</span>
             <span class="text">Группировать близкие точки</span>
           </span>
         </label>
@@ -315,7 +296,6 @@
   /* ---------- базовые слои (как в fit-tracker) ---------- */
   const ICONS = {
     osm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21 9 3M20 21 15 3M12 6v3M12 12v3M12 18v3"/></svg>',
-    dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>',
     topo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 19 6-10 4 6 2-3 6 7H3Z"/><circle cx="17" cy="6" r="2"/></svg>',
     sat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 7 4-4 4 4-4 4zM7 13l-4 4 4 4 4-4zM11 11l2 2M15 15l3-3M9 9 6 6"/><path d="M17 17a4 4 0 0 1-4 4"/></svg>',
     locate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
@@ -323,8 +303,6 @@
   const BASE_LAYERS = [
     { id: 'osm', name: 'Схема', icon: ICONS.osm, url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
-    { id: 'dark', name: 'Тёмная', icon: ICONS.dark, url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd', maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' },
     { id: 'topo', name: 'Рельеф', icon: ICONS.topo, url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', subdomains: 'abc', maxZoom: 17,
       attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, SRTM | &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)' },
     { id: 'sat', name: 'Спутник', icon: ICONS.sat, url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19,
@@ -397,13 +375,13 @@
   }
 
   /* ---------- данные ---------- */
-  const chips = ids => `<div class="pop__chips">${ids.map(id => `<span style="background:${catById[id].color}">${esc(catById[id].name)}</span>`).join('')}</div>`;
+  const chips = ids => `<div class="pop__chips">${ids.map(id => `<span style="background:${catById[id].color}">${catById[id].emoji} ${esc(catById[id].name)}</span>`).join('')}</div>`;
   const list = v => `<ul class="pop__list">${v.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
   const ymaps = (la, lo) => `https://yandex.ru/maps/?pt=${lo},${la}&z=17&l=map`;
 
   const cluster = L.markerClusterGroup({
     maxClusterRadius: 48, disableClusteringAtZoom: 14, spiderfyOnMaxZoom: true, chunkedLoading: true,
-    iconCreateFunction: c => L.divIcon({ html: `<div><span>${c.getChildCount()}</span></div>`, className: 'marker-cluster', iconSize: L.point(40, 40) }),
+    iconCreateFunction: c => { const n = c.getChildCount(); return L.divIcon({ html: `<div>${n}</div>`, className: 'marker-cluster' + (n >= 100 ? ' big' : ''), iconSize: n >= 100 ? L.point(46, 46) : L.point(40, 40) }); },
   });
   const plain = L.layerGroup();
   const routesLayer = L.layerGroup().addTo(map);
@@ -413,7 +391,7 @@
     const color = p.c.length ? catById[p.c[0]].color : '#777';
     const m = L.circleMarker([p.la, p.lo], { radius: 7, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: .95, className: 'cam' });
     m.on('mouseover', () => m.setRadius(9)); m.on('mouseout', () => m.setRadius(7));
-    m.bindPopup(`<p class="pop__title">${esc(p.a)}</p>${chips(p.c)}${list(p.v)}
+    m.bindPopup(`<p class="pop__title">📷 ${esc(p.a)}</p>${chips(p.c)}${list(p.v)}
       <div class="pop__mode">${esc(p.m)}</div>
       <div class="pop__meta"><span>${p.la.toFixed(5)}, ${p.lo.toFixed(5)}</span><a target="_blank" rel="noopener" href="${ymaps(p.la, p.lo)}">Открыть в Яндекс Картах</a></div>`);
     m._p = p; return m;
@@ -421,7 +399,7 @@
   const routes = D.routes.map((r, i) => {
     const color = r.c.length ? catById[r.c[0]].color : '#1565c0';
     const g = L.featureGroup(r.s.map(seg => L.polyline(seg, { color, weight: 4, opacity: .85, dashArray: '8 7', lineCap: 'round' })));
-    g.bindPopup(`<p class="pop__title">Мобильный комплекс · маршрут ${i + 1}</p>${chips(r.c)}${list(r.v)}
+    g.bindPopup(`<p class="pop__title">🚓 Мобильный комплекс · маршрут ${i + 1}</p>${chips(r.c)}${list(r.v)}
       <div class="pop__mode">${esc(r.m)}</div><div class="pop__meta"><span>Участков: ${r.s.length}</span></div>`);
     g._r = r; return g;
   });
@@ -432,18 +410,16 @@
   D.routes.forEach(r => r.c.forEach(id => counts[id] = (counts[id] || 0) + 1));
   const savedCats = new Set(store.get('cats', D.cats.map(c => c.id)));
   $('cats').innerHTML = D.cats.map(c =>
-    `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${savedCats.has(c.id)}" style="--c:${c.color}"><span class="dot"></span>${esc(c.name)}<span class="n">${counts[c.id] || 0}</span></button>`
+    `<button type="button" class="chip" data-cat="${c.id}" aria-pressed="${savedCats.has(c.id)}" style="--c:${c.color}"><span class="emo" aria-hidden="true">${c.emoji}</span>${esc(c.name)}<span class="dot" aria-hidden="true"></span><span class="n">${counts[c.id] || 0}</span></button>`
   ).join('');
   const catBtns = [...document.querySelectorAll('.chip')];
-  const q = $('q'), showStatic = $('showStatic'), showMobile = $('showMobile'), clusterBox = $('cluster');
+  const showStatic = $('showStatic'), showMobile = $('showMobile'), clusterBox = $('cluster');
   showStatic.checked = store.get('static', true); showMobile.checked = store.get('mobile', true); clusterBox.checked = store.get('cluster', true);
 
   const activeCats = () => new Set(catBtns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.cat));
 
-  function apply(opts = {}) {
+  function apply() {
     const act = activeCats();
-    const term = q.value.trim().toLowerCase();
-    $('searchWrap').classList.toggle('has-value', !!term);
     const target = clusterBox.checked ? cluster : plain, other = clusterBox.checked ? plain : cluster;
     other.clearLayers(); if (map.hasLayer(other)) map.removeLayer(other);
     if (!map.hasLayer(target)) target.addTo(map);
@@ -451,37 +427,28 @@
     const keep = [];
     if (showStatic.checked) markers.forEach(m => {
       const p = m._p;
-      if (p.c.some(id => act.has(id)) && (!term || p.a.toLowerCase().includes(term))) keep.push(m);
+      if (p.c.some(id => act.has(id))) keep.push(m);
     });
     target.clearLayers();
     if (keep.length) target.addLayers ? target.addLayers(keep) : keep.forEach(m => target.addLayer(m));
 
     routesLayer.clearLayers();
     let nR = 0;
-    if (showMobile.checked && !term) routes.forEach(g => { if (g._r.c.some(id => act.has(id))) { routesLayer.addLayer(g); nR++; } });
+    if (showMobile.checked) routes.forEach(g => { if (g._r.c.some(id => act.has(id))) { routesLayer.addLayer(g); nR++; } });
 
     $('cntStatic').textContent = `${keep.length} из ${D.points.length}`;
-    $('cntMobile').textContent = term ? 'скрыты' : `${nR} из ${D.routes.length}`;
-    $('cntMobile').title = term ? 'Маршруты не участвуют в поиске по адресу' : '';
+    $('cntMobile').textContent = `${nR} из ${D.routes.length}`;
 
     let stats;
     if (!act.size) stats = '<span class="warn">Выберите хотя бы один вид нарушения</span>';
-    else if (term && !keep.length) stats = `По запросу «<strong>${esc(q.value.trim())}</strong>» ничего не найдено`;
     else stats = `Камер на карте: <strong>${keep.length}</strong>${nR ? ` · маршрутов: <strong>${nR}</strong>` : ''}`;
     $('stats').innerHTML = stats;
 
-    if (opts.fit && term && keep.length) {
-      const b = L.featureGroup(keep).getBounds();
-      if (b.isValid()) map.fitBounds(b.pad(.3), { maxZoom: 15, paddingBottomRight: isMobile() ? [0, 160] : [0, 0] });
-    }
     store.set('cats', [...act]); store.set('static', showStatic.checked); store.set('mobile', showMobile.checked); store.set('cluster', clusterBox.checked);
   }
 
   catBtns.forEach(b => b.addEventListener('click', () => { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); apply(); }));
-  [showStatic, showMobile, clusterBox].forEach(b => b.addEventListener('change', () => apply()));
-  let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => apply({ fit: true }), 220); });
-  q.addEventListener('keydown', e => { if (e.key === 'Enter') { apply({ fit: true }); q.blur(); if (isMobile()) setSheet(false); } });
-  $('clear').onclick = () => { q.value = ''; apply(); q.focus(); };
+  [showStatic, showMobile, clusterBox].forEach(b => b.addEventListener('change', apply));
   $('all').onclick = () => { catBtns.forEach(b => b.setAttribute('aria-pressed', 'true')); apply(); };
   $('none').onclick = () => { catBtns.forEach(b => b.setAttribute('aria-pressed', 'false')); apply(); };
 
@@ -511,7 +478,6 @@
     drag = null;
   };
   panel.addEventListener('pointerup', endDrag); panel.addEventListener('pointercancel', endDrag);
-  q.addEventListener('focus', () => { if (isMobile()) setSheet(true); });
   map.on('click dragstart', () => { if (isMobile()) setSheet(false); });
 
   /* ---------- старт ---------- */
