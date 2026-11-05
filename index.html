@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Камеры фотовидеофиксации — Кузбасс</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<style>
+  :root { --bg:#fff; --fg:#1b1b1f; --muted:#6b7280; --line:#e5e7eb; --accent:#1e88e5; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; margin:0; font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--fg); }
+  #app { display:flex; height:100%; }
+  #side { width:320px; flex:0 0 320px; display:flex; flex-direction:column; border-right:1px solid var(--line); background:var(--bg); z-index:1000; }
+  #side header { padding:14px 16px 10px; border-bottom:1px solid var(--line); }
+  #side h1 { font-size:16px; margin:0 0 2px; }
+  #side .sub { color:var(--muted); font-size:12px; }
+  #side .block { padding:10px 16px; border-bottom:1px solid var(--line); }
+  #q { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; outline:none; }
+  #q:focus { border-color:var(--accent); }
+  .row { display:flex; align-items:center; gap:8px; padding:4px 0; cursor:pointer; user-select:none; }
+  .row input { margin:0; }
+  .dot { width:12px; height:12px; border-radius:50%; flex:0 0 12px; border:1.5px solid rgba(0,0,0,.25); }
+  .row .n { flex:1; }
+  .row .cnt { color:var(--muted); font-variant-numeric:tabular-nums; font-size:12px; }
+  .tools { display:flex; gap:8px; margin-top:6px; }
+  .tools button, .btn { font-size:12px; padding:4px 8px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
+  .tools button:hover,.btn:hover { background:#f3f4f6; }
+  #cats { max-height:calc(100vh - 330px); overflow:auto; }
+  #stats { padding:10px 16px; font-size:12px; color:var(--muted); margin-top:auto; }
+  #map { flex:1; }
+  .leaflet-popup-content { margin:12px 14px; font-size:13px; max-width:300px; }
+  .leaflet-popup-content b { display:block; margin-bottom:6px; font-size:13.5px; }
+  .chip { display:inline-block; padding:2px 7px; border-radius:999px; font-size:11px; color:#fff; margin:2px 3px 2px 0; }
+  .popup-mode { color:var(--muted); font-size:12px; margin-top:6px; }
+  .popup-list { margin:6px 0 0; padding-left:16px; font-size:12px; color:#374151; }
+  .popup-list li { margin:2px 0; }
+  .coords { font-size:11px; color:var(--muted); margin-top:6px; }
+  .coords a { color:var(--accent); text-decoration:none; }
+  #toggle { display:none; position:absolute; top:10px; left:10px; z-index:1100; padding:8px 10px; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.2); cursor:pointer; }
+  @media (max-width: 760px) {
+    #side { position:absolute; inset:0 auto 0 0; transform:translateX(-100%); transition:transform .2s; box-shadow:0 0 20px rgba(0,0,0,.2); }
+    #side.open { transform:none; }
+    #toggle { display:block; }
+    #cats { max-height:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <h1>Камеры фотовидеофиксации</h1>
+      <div class="sub">Кемеровская область — Кузбасс · <span id="src"></span></div>
+    </header>
+    <div class="block">
+      <input id="q" type="search" placeholder="Поиск по адресу: улица, трасса, км…" autocomplete="off">
+    </div>
+    <div class="block">
+      <label class="row"><input type="checkbox" id="showStatic" checked><span class="dot" style="background:#e53935"></span><span class="n">Стационарные и передвижные</span><span class="cnt" id="cntStatic"></span></label>
+      <label class="row"><input type="checkbox" id="showMobile" checked><span class="dot" style="background:none;border:2px dashed #1e88e5;border-radius:0"></span><span class="n">Мобильные (маршруты)</span><span class="cnt" id="cntMobile"></span></label>
+      <label class="row"><input type="checkbox" id="cluster" checked><span class="dot" style="background:#9ca3af"></span><span class="n">Группировать точки</span></label>
+    </div>
+    <div class="block">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:13px">Вид нарушения</strong>
+        <div class="tools"><button id="all">Все</button><button id="none">Ни одного</button></div>
+      </div>
+      <div id="cats"></div>
+    </div>
+    <div id="stats"></div>
+  </aside>
+  <button id="toggle">☰ Фильтры</button>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="data.js"></script>
+<script>
+(function () {
+  const D = window.CAMERA_DATA;
+  const catById = Object.fromEntries(D.cats.map(c => [c.id, c]));
+  document.getElementById('src').textContent = 'данные от ' + D.source.replace('.xlsx', '');
+
+  // ---- карта
+  const map = L.map('map', { preferCanvas: true });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+  L.control.scale({ imperial: false }).addTo(map);
+
+  const cluster = L.markerClusterGroup({ maxClusterRadius: 50, disableClusteringAtZoom: 14, spiderfyOnMaxZoom: true, chunkedLoading: true });
+  const plain = L.layerGroup();
+  const routesLayer = L.layerGroup().addTo(map);
+  cluster.addTo(map);
+
+  const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+  const chips = ids => ids.map(id => `<span class="chip" style="background:${catById[id].color}">${esc(catById[id].name)}</span>`).join('');
+  const list = v => '<ul class="popup-list">' + v.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  const ymaps = (la, lo) => `https://yandex.ru/maps/?pt=${lo},${la}&z=17&l=map`;
+
+  // ---- маркеры
+  const markers = D.points.map(p => {
+    const color = p.c.length ? catById[p.c[0]].color : '#777';
+    const m = L.circleMarker([p.la, p.lo], { radius: 7, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: .95 });
+    m.bindPopup(`<b>${esc(p.a)}</b>${chips(p.c)}${list(p.v)}
+      <div class="popup-mode">${esc(p.m)}</div>
+      <div class="coords">${p.la.toFixed(6)}, ${p.lo.toFixed(6)} · <a target="_blank" rel="noopener" href="${ymaps(p.la, p.lo)}">Яндекс Карты</a></div>`);
+    m._p = p;
+    return m;
+  });
+
+  const routes = D.routes.map((r, i) => {
+    const color = r.c.length ? catById[r.c[0]].color : '#1e88e5';
+    const g = L.featureGroup(r.s.map(seg => L.polyline(seg, { color, weight: 4, opacity: .8, dashArray: '8 6' })));
+    g.bindPopup(`<b>Мобильный комплекс, маршрут №${i + 1}</b>${chips(r.c)}${list(r.v)}
+      <div class="popup-mode">${esc(r.m)}</div><div class="coords">${r.s.length} участков</div>`);
+    g._r = r;
+    return g;
+  });
+
+  // ---- фильтры
+  const catsEl = document.getElementById('cats');
+  const counts = {};
+  D.points.forEach(p => p.c.forEach(id => counts[id] = (counts[id] || 0) + 1));
+  D.routes.forEach(r => r.c.forEach(id => counts[id] = (counts[id] || 0) + 1));
+  D.cats.forEach(c => {
+    const row = document.createElement('label'); row.className = 'row';
+    row.innerHTML = `<input type="checkbox" data-cat="${c.id}" checked><span class="dot" style="background:${c.color}"></span><span class="n">${esc(c.name)}</span><span class="cnt">${counts[c.id] || 0}</span>`;
+    catsEl.appendChild(row);
+  });
+  const catBoxes = [...catsEl.querySelectorAll('input')];
+  const q = document.getElementById('q');
+  const showStatic = document.getElementById('showStatic');
+  const showMobile = document.getElementById('showMobile');
+  const clusterBox = document.getElementById('cluster');
+
+  function activeCats() { return new Set(catBoxes.filter(b => b.checked).map(b => b.dataset.cat)); }
+
+  function apply() {
+    const act = activeCats();
+    const term = q.value.trim().toLowerCase();
+    const target = clusterBox.checked ? cluster : plain;
+    const other = clusterBox.checked ? plain : cluster;
+    other.clearLayers(); if (map.hasLayer(other)) map.removeLayer(other);
+    if (!map.hasLayer(target)) target.addTo(map);
+
+    const keep = [];
+    let nPts = 0;
+    if (showStatic.checked) markers.forEach(m => {
+      const p = m._p;
+      if (p.c.some(id => act.has(id)) && (!term || p.a.toLowerCase().includes(term))) { keep.push(m); nPts++; }
+    });
+    target.clearLayers();
+    if (keep.length) target.addLayers ? target.addLayers(keep) : keep.forEach(m => target.addLayer(m));
+
+    routesLayer.clearLayers();
+    let nR = 0;
+    if (showMobile.checked && !term) routes.forEach(g => { if (g._r.c.some(id => act.has(id))) { routesLayer.addLayer(g); nR++; } });
+
+    document.getElementById('cntStatic').textContent = `${nPts} / ${D.points.length}`;
+    document.getElementById('cntMobile').textContent = `${nR} / ${D.routes.length}`;
+    document.getElementById('stats').innerHTML = `Показано точек: <b>${nPts}</b>, маршрутов: <b>${nR}</b>` + (term ? `<br>Поиск: «${esc(term)}»` : '');
+
+    if (term && keep.length) {
+      const b = L.featureGroup(keep).getBounds();
+      if (b.isValid()) map.fitBounds(b.pad(.3), { maxZoom: 15 });
+    }
+  }
+
+  catBoxes.forEach(b => b.addEventListener('change', apply));
+  [showStatic, showMobile, clusterBox].forEach(b => b.addEventListener('change', apply));
+  let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(apply, 200); });
+  document.getElementById('all').onclick = () => { catBoxes.forEach(b => b.checked = true); apply(); };
+  document.getElementById('none').onclick = () => { catBoxes.forEach(b => b.checked = false); apply(); };
+  document.getElementById('toggle').onclick = () => document.getElementById('side').classList.toggle('open');
+  map.on('click', () => document.getElementById('side').classList.remove('open'));
+
+  // ---- старт
+  apply();
+  const all = L.featureGroup(markers).getBounds();
+  map.fitBounds(all.pad(.05));
+})();
+</script>
+</body>
+</html>
